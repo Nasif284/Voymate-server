@@ -1,0 +1,16 @@
+export const TRIP_TOKENS = {
+  ITripRepository: 'ITripRepository',
+  ICreateTrip: 'ICreateTrip',
+  ICalculateMatch: 'ICalculateMatch',
+  IGetTripMatches: 'IGetTripMatches',
+  IGetActiveTrip: 'IGetActiveTrip',
+  IGetUserUpcomingTrips: 'IGetUserUpcomingTrips',
+  IGetMatchProfile: 'IGetMatchProfile',
+  IGetPastTrips: 'IGetPastTrips',
+  IEditTrip: 'IEditTrip',
+  IDeleteTrip: 'IDeleteTrip',
+  ISearchTripMatches: 'ISearchTripMatches',
+  IGetBuddiesUpcomingTrips: 'IGetBuddiesUpcomingTrips',
+  IGetAllTripMatches: 'IGetAllTripMatches',
+};
+

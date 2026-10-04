@@ -1,0 +1,148 @@
+name: Travel Buddy CI
+
+on:
+  push:
+    branches: [main, dev]
+
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Validate Branch Name
+        if: github.event_name == 'pull_request'
+        run: |
+          BRANCH_NAME="${{ github.head_ref }}"
+
+          echo "Branch: $BRANCH_NAME"
+
+          if [[ ! "$BRANCH_NAME" =~ ^(feature|bugfix|hotfix|chore|release)\/[A-Z]+-[0-9]+-[a-z0-9-]+$ ]]; then
+            echo "❌ Invalid branch name."
+            echo "Expected: feature/TB-123-create-trip"
+            exit 1
+          fi
+
+      - name: Validate Commit Messages
+        if: github.event_name == 'pull_request'
+        run: |
+          git fetch origin ${{ github.base_ref }}
+
+          COMMITS=$(git rev-list origin/${{ github.base_ref }}..HEAD)
+
+          for COMMIT in $COMMITS; do
+
+            COMMIT_MSG=$(git log -1 --pretty=%s "$COMMIT")
+
+            echo "Checking commit:"
+            echo "$COMMIT_MSG"
+
+            if [[ ! "$COMMIT_MSG" =~ ^(feat|fix|docs|style|refactor|test|chore|build|ci|perf)(\(.+\))?:\ .+ ]]; then
+
+              echo "❌ Invalid commit message:"
+              echo "$COMMIT_MSG"
+
+              echo ""
+              echo "Example:"
+              echo "feat: create trip API"
+
+              exit 1
+            fi
+
+          done
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Generate Prisma Client
+        run: npx prisma generate
+
+      - name: Check Code Formatting
+        run: npm run format:check
+
+      - name: Lint for Errors
+        run: npm run lint
+
+      - name: Type Check (No Emit)
+        run: npx tsc --noEmit
+
+      - name: Build Application
+        run: npm run build
+
+  build-and-push:
+    needs: build-and-check
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -f Dockerfile.prod \
+            -t ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }} \
+            -t ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:latest \
+            .
+
+      - name: Push Docker Image
+        run: |
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+          docker push ${{ steps.login-ecr.outputs.registry }}/${{ vars.ECR_REPOSITORY }}:latest
+
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Deploy to EC2
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ vars.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters 'commands=[
+              "/home/ubuntu/deploy.sh"
+            ]' \
+            --region ap-south-1

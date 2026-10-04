@@ -1,0 +1,79 @@
+model Trip {
+    id            String @id @default(uuid()) @db.Uuid
+    name          String @db.VarChar(255)
+    destinationId String @map("destination_id") @db.Uuid
+
+    dateFrom DateTime @map("date_from") @db.Date
+    dateTo   DateTime @map("date_to") @db.Date
+
+    budgetStyle BudgetStyle @map("budget_style")
+    travelStyle TripStyle   @map("travel_style")
+    status      TripStatus  @default(UPCOMING) @map("status")
+
+    createdBy String @map("created_by") @db.Uuid
+
+    createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+    updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+    deletedAt DateTime? @map("deleted_at") @db.Timestamptz(6)
+
+    destination Destination @relation(fields: [destinationId], references: [id])
+    creator     User        @relation("TripCreator", fields: [createdBy], references: [id])
+
+    sourceTrip TripMatch[] @relation("TripMatchA")
+    targetTrip TripMatch[] @relation("TripMatchB")
+
+    @@index([destinationId])
+    @@index([createdBy])
+    @@index([status])
+    @@index([deletedAt])
+    @@map("trips")
+}
+
+model Destination {
+    id          String      @id @default(uuid()) @db.Uuid
+    placeId     String      @unique @map("place_id") @db.VarChar(255)
+    name        String      @db.VarChar(255)
+    city        String?     @db.VarChar(255)
+    state       String?     @db.VarChar(255)
+    countryCode String      @map("country_code") @db.VarChar(10)
+    latitude    Decimal     @db.Decimal(10, 8)
+    longitude   Decimal     @db.Decimal(11, 8)
+    createdAt   DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+    country     Country     @relation(fields: [countryCode], references: [code])
+    trips       Trip[]
+    coverUrl    String?     @map("cover_url") @db.VarChar(500)
+
+    @@index([placeId])
+    @@index([countryCode])
+    @@index([state])
+    @@map("destinations")
+}
+
+model TripMatch {
+    id String @id @default(uuid())
+
+    tripAId String @map("tripA_id") @db.Uuid
+    tripBId String @map("tripB_id") @db.Uuid
+
+    totalScore Int @map("total_score")
+
+    destinationScore Int @map("destination_score")
+    dateScore        Int @map("date_score")
+    travelStyleScore Int @map("travel_style_score")
+    budgetScore      Int @map("budget_score")
+    personalityScore Int @map("personality_score")
+    languageScore    Int @map("language_score")
+    interestScore    Int @map("interest_score")
+
+    explanation Json?
+
+    calculatedAt DateTime @default(now())
+
+    tripA Trip @relation("TripMatchA", fields: [tripAId], references: [id], onDelete: Cascade)
+    tripB Trip @relation("TripMatchB", fields: [tripBId], references: [id], onDelete: Cascade)
+
+    connectionRequest ConnectionRequest[]
+
+    @@unique([tripAId, tripBId])
+    @@map("trip_matches")
+}

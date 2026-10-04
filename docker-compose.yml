@@ -1,0 +1,128 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '5000:5000'
+      - '9229:9229'
+    environment:
+      DOPPLER_TOKEN: ${DOPPLER_TOKEN}
+      # - .env
+      # DATABASE_URL: ${DATABASE_URL}
+      # REDIS_URL: ${REDIS_URL}
+      # NODE_ENV: ${NODE_ENV}
+      # PORT: ${PORT}
+    command: sh -c "doppler run -- sh -c 'npm run db:generate && npm run dev'"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: '10m'
+        max-file: '3'
+
+  postgres:
+    build:
+      context: ./postgres
+      dockerfile: Dockerfile
+    environment:
+      POSTGRES_USER: ${DB_USER:-nasif}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-1234}
+      POSTGRES_DB: ${DB_NAME:-voymate}
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DB_USER:-nasif} -d ${DB_NAME:-voymate}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/var/lib/redis/data
+
+  # loki:
+  #   image: grafana/loki:3.7.0
+  #   container_name: travelbuddy-loki
+  #   command: -config.file=/etc/loki/loki-config.yaml
+  #   ports:
+  #     - '3100:3100'
+  #   volumes:
+  #     - ./monitoring/loki/loki-config.yaml:/etc/loki/loki-config.yaml:ro
+  #     - loki_data:/loki
+  #   restart: unless-stopped
+
+  # alloy:
+  #   image: grafana/alloy:latest
+  #   container_name: travelbuddy-alloy
+  #   command:
+  #     - run
+  #     - --server.http.listen-addr=0.0.0.0:12345
+  #     - --storage.path=/var/lib/alloy/data
+  #     - /etc/alloy/config.alloy
+  #   ports:
+  #     - '12345:12345'
+  #   volumes:
+  #     - ./monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro
+  #     - alloy_data:/var/lib/alloy/data
+
+  #     # Allow Alloy to discover/read Docker container logs
+  #     - /var/run/docker.sock:/var/run/docker.sock:ro
+
+  #   depends_on:
+  #     - loki
+  #   restart: unless-stopped
+
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   container_name: travelbuddy-grafana
+  #   environment:
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=1234
+  #   ports:
+  #     - '3001:3000'
+  #   volumes:
+  #     - grafana_data:/var/lib/grafana
+  #     - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+  #   depends_on:
+  #     - loki
+  #   restart: unless-stopped
+
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: travelbuddy-prometheus
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+  #   ports:
+  #     - '9090:9090'
+  #   volumes:
+  #     - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - prometheus_data:/prometheus
+  #   depends_on:
+  #     - api
+  #   restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+  # loki_data:
+  # alloy_data:
+  # grafana_data:
+  # prometheus_data:

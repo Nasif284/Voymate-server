@@ -1,0 +1,52 @@
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @unique @db.VarChar(60)
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  admins Admin[]
+
+  @@map("roles")
+}
+
+model Admin {
+  id           String    @id @default(uuid()) @db.Uuid
+  fullName     String    @map("full_name") @db.VarChar(100)
+  email        String    @unique @db.VarChar(255)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  avatarUrl    String?   @map("avatar_url") @db.VarChar(500)
+  lastActiveAt DateTime? @map("last_active_at") @db.Timestamptz(6)
+  lastActiveIp String?   @map("last_active_ip") @db.VarChar(45)
+
+  createdBy String?  @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+
+  roleId String @map("role_id") @db.Uuid
+  role   Role   @relation(fields: [roleId], references: [id])
+
+  accountStatus AccountStatus @default(ACTIVE) @map("account_status")
+
+  statusHistory          AdminStatusHistory[]
+  assignedVerifications  Verification[]         @relation("VerificationReviewer")
+  verificationActivities VerificationActivity[]
+
+  @@index([email])
+  @@index([accountStatus])
+  @@map("admins")
+}
+
+model AdminStatusHistory {
+  id             String        @id @default(uuid()) @db.Uuid
+  adminId        String        @map("user_id") @db.Uuid
+  previousStatus AccountStatus @map("previous_status")
+  newStatus      AccountStatus @map("new_status")
+  reason         String?
+  actionedBy     String?       @map("actioned_by") @db.Uuid
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  admin Admin @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@map("admin_status_history")
+}
