@@ -11,7 +11,6 @@ export interface AdminAnalyticsDTO {
   users: {
     total: number;
     newUsers: number;
-
     growth: {
       period: Date;
       count: number;
