@@ -93,8 +93,26 @@ export class SearchTripMatches implements ISearchTripMatches {
         },
       );
 
-    // 3. Score every candidate trip on the fly against search criteria & user vibe
-    const scoredTrips = candidateTrips.map((trip) => {
+    const hasSearchFilters = Boolean(
+      dto.destinationName?.trim() ||
+        dto.city?.trim() ||
+        dto.state?.trim() ||
+        dto.countryCode?.trim() ||
+        dto.dateFrom ||
+        dto.dateTo ||
+        dto.travelStyle ||
+        dto.budgetStyle,
+    );
+
+    // 3. Process candidate trips (score only if search filters were applied)
+    const processedTrips = candidateTrips.map((trip) => {
+      if (!hasSearchFilters) {
+        return {
+          trip,
+          searchResult: null,
+        };
+      }
+
       const tripData: TripMatchingData = {
         id: trip.id,
         name: trip.name,
@@ -139,12 +157,37 @@ export class SearchTripMatches implements ISearchTripMatches {
       };
     });
 
-    // Extract buddies on the road (connected users with match score >= 25)
-    const buddiesOnRoadCandidates = scoredTrips.filter(
-      (m) =>
-        m.trip.connectionStatus === 'CONNECTED' &&
-        m.searchResult.totalScore >= 25,
-    );
+    if (hasSearchFilters) {
+      // Search results: sorted by match score descending
+      processedTrips.sort((a, b) => {
+        const scoreA = a.searchResult?.totalScore ?? 0;
+        const scoreB = b.searchResult?.totalScore ?? 0;
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+        return (
+          new Date(a.trip.dateFrom).getTime() -
+          new Date(b.trip.dateFrom).getTime()
+        );
+      });
+    } else {
+      // "All Available Trips Looking for Companions": sorted purely by dateFrom ascending (earliest trip first)
+      processedTrips.sort((a, b) => {
+        return (
+          new Date(a.trip.dateFrom).getTime() -
+          new Date(b.trip.dateFrom).getTime()
+        );
+      });
+    }
+
+    // Extract buddies on the road
+    const buddiesOnRoadCandidates = processedTrips.filter((m) => {
+      if (m.trip.connectionStatus !== 'CONNECTED') return false;
+      if (hasSearchFilters) {
+        return (m.searchResult?.totalScore ?? 0) >= 25;
+      }
+      return true;
+    });
 
     const buddiesOnRoad: TripMatch[] = await Promise.all(
       buddiesOnRoadCandidates.map(async ({ trip, searchResult }) => {
@@ -176,7 +219,9 @@ export class SearchTripMatches implements ISearchTripMatches {
           tripMatch: {
             id: trip.id,
             matchedTripId: trip.id,
-            totalPoints: searchResult.totalScore,
+            totalPoints: hasSearchFilters
+              ? (searchResult?.totalScore ?? 0)
+              : null,
             dateFrom: trip.dateFrom,
             dateTo: trip.dateTo,
             destination: trip.destinationName,
@@ -188,33 +233,29 @@ export class SearchTripMatches implements ISearchTripMatches {
       }),
     );
 
-    // 4. Sort by highest totalScore first
-    scoredTrips.sort(
-      (a, b) => b.searchResult.totalScore - a.searchResult.totalScore,
-    );
-
     // 5. Paginate results
-    const total = scoredTrips.length;
+    const total = processedTrips.length;
     const totalPages = Math.ceil(total / limit) || 1;
     const startIndex = (page - 1) * limit;
-    const paginatedItems = scoredTrips.slice(
+    const paginatedItems = processedTrips.slice(
       startIndex,
       startIndex + limit,
     );
 
-    // 6. Snapshot cards in Redis & sign assets
+    // 6. Snapshot cards in Redis & sign assets (only snapshot if search filters are active)
     const matches: TripMatch[] = await Promise.all(
       paginatedItems.map(async ({ trip, searchResult }) => {
-        // Cache snapshot in Redis so clicking the card shows identical score
-        const cacheKey = `match:${dto.userId}:trip:${trip.id}`;
-        await this._cacheService.set(
-          cacheKey,
-          1800,
-          JSON.stringify({
-            totalScore: searchResult.totalScore,
-            reasons: searchResult.reasons,
-          }),
-        );
+        if (hasSearchFilters && searchResult) {
+          const cacheKey = `match:${dto.userId}:trip:${trip.id}`;
+          await this._cacheService.set(
+            cacheKey,
+            1800,
+            JSON.stringify({
+              totalScore: searchResult.totalScore,
+              reasons: searchResult.reasons,
+            }),
+          );
+        }
 
         const signedAvatar = trip.creator.avatarUrl
           ? await this._storageService.getSignedUrl(trip.creator.avatarUrl)
@@ -244,7 +285,9 @@ export class SearchTripMatches implements ISearchTripMatches {
           tripMatch: {
             id: trip.id,
             matchedTripId: trip.id,
-            totalPoints: searchResult.totalScore,
+            totalPoints: hasSearchFilters
+              ? (searchResult?.totalScore ?? 0)
+              : null,
             dateFrom: trip.dateFrom,
             dateTo: trip.dateTo,
             destination: trip.destinationName,

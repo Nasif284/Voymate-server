@@ -19,16 +19,12 @@ const ROLES = [
     description: 'Super Administrator with full system privileges',
   },
   {
-    name: 'ADMIN',
-    description: 'Platform Administrator for operational management',
+    name: 'MODERATOR',
+    description: 'Moderator handling user moderation, support, and identity verifications',
   },
   {
-    name: 'VERIFICATION_OFFICER',
-    description: 'Officer responsible for reviewing user identity verification documents',
-  },
-  {
-    name: 'SUPPORT_ADMIN',
-    description: 'Support agent handling user tickets and community moderation',
+    name: 'ANALYST',
+    description: 'Analyst with read-only access to dashboards, reports, and logs',
   },
 ];
 

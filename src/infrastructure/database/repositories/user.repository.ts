@@ -6,6 +6,7 @@ import {
   OnboardingSource,
   ProfileVisibility,
   RequestFromOption,
+  TripStatus,
 } from '@prisma/client';
 import { BaseRepository } from './base.repository';
 
@@ -44,6 +45,10 @@ import { GetSettingsResponseDTO } from '../../../application/dtos/profile/respon
 import { GetAllRequestsResponseDTO } from '../../../application/dtos/connections/response/get-all-requests.dto';
 import { GetSentRequestsResponseDTO } from '../../../application/dtos/connections/response/get-sent-requests.dto';
 import { UserMapper } from '../mappers/user.mapper';
+import {
+  formatAccountStatusDisplayName,
+  formatEnumToDisplayName,
+} from '../../../shared/helpers/enum-formatter.helper';
 @injectable()
 export class UserRepository
   extends BaseRepository<
@@ -393,256 +398,131 @@ export class UserRepository
     currentUserId: string,
     params: { page: number; limit: number },
   ): Promise<UserCardDetailsResponseDTO> {
-    const offset = (params.page - 1) * params.limit;
+    const { page, limit } = params;
+    const skip = (page - 1) * limit;
 
-    const currentUser = await this.prisma.user.findUnique({
-      where: { id: currentUserId },
-      select: {
-        state: true,
-        countryCode: true,
-        location: {
-          select: {
-            currentLat: true,
-            currentLng: true,
-            currentCity: true,
-            currentState: true,
-            currentCountryCode: true,
+    // 1. Fetch current user's active upcoming trip
+    const activeTrip = await this.prisma.trip.findFirst({
+      where: {
+        createdBy: currentUserId,
+        status: TripStatus.UPCOMING,
+        deletedAt: null,
+        dateTo: { gte: new Date() },
+      },
+      orderBy: { dateFrom: 'asc' },
+      include: { destination: true },
+    });
+
+    // 2. Destination and region/state exclusion criteria
+    const destinationExclusion: Prisma.TripWhereInput | undefined = activeTrip
+      ? {
+          OR: [
+            { destinationId: activeTrip.destinationId },
+            ...(activeTrip.destination?.name
+              ? [
+                  {
+                    destination: {
+                      name: {
+                        equals: activeTrip.destination.name,
+                        mode: 'insensitive' as const,
+                      },
+                    },
+                  },
+                ]
+              : []),
+            ...(activeTrip.destination?.state
+              ? [
+                  {
+                    destination: {
+                      state: {
+                        equals: activeTrip.destination.state,
+                        mode: 'insensitive' as const,
+                      },
+                    },
+                  },
+                ]
+              : []),
+          ],
+        }
+      : undefined;
+
+    // 3. Fetch candidate trips ordered by dateFrom: 'asc'
+    const trips = await this.prisma.trip.findMany({
+      where: {
+        createdBy: { not: currentUserId },
+        status: TripStatus.UPCOMING,
+        deletedAt: null,
+        dateTo: { gte: new Date() },
+        NOT: destinationExclusion,
+        creator: {
+          accountStatus: AccountStatus.ACTIVE,
+          deletedAt: null,
+          onboarding: { onboardingCompleted: true },
+        },
+      },
+      orderBy: { dateFrom: 'asc' },
+      include: {
+        destination: {
+          include: { country: true },
+        },
+        creator: {
+          include: {
+            country: true,
+            interests: true,
           },
         },
       },
     });
 
-    const userState =
-      currentUser?.location?.currentState || currentUser?.state || null;
-    const userCountryCode =
-      currentUser?.location?.currentCountryCode ||
-      currentUser?.countryCode ||
-      null;
+    // 4. Deduplicate by trip.createdBy (preserves earliest trip per user)
+    const uniqueUserTrips: typeof trips = [];
+    const seenUsers = new Set<string>();
+    for (const trip of trips) {
+      if (!seenUsers.has(trip.createdBy)) {
+        seenUsers.add(trip.createdBy);
+        uniqueUserTrips.push(trip);
+      }
+    }
 
-    const hasCoordinates =
-      !!(currentUser?.location?.currentLat && currentUser?.location?.currentLng);
-    const latitude = hasCoordinates
-      ? Number(currentUser!.location!.currentLat)
-      : null;
-    const longitude = hasCoordinates
-      ? Number(currentUser!.location!.currentLng)
-      : null;
+    const total = uniqueUserTrips.length;
+    const paginatedTrips = uniqueUserTrips.slice(skip, skip + limit);
 
-    const users = await this.prisma.$queryRaw<UserWithDetails[]>`
-      SELECT
-        u.id,
-        u.full_name AS "fullName",
-        u.avatar_url AS "avatarUrl",
-        u.cover_url AS "coverUrl",
-        u.is_traveling AS "isTraveling",
-        EXTRACT(
-          YEAR FROM AGE(
-            CURRENT_DATE,
-            u.date_of_birth
-          )
-        )::int AS age,
-        u.origin_city AS city,
-        u.origin_region AS state,
-        c.name AS country,
-        u.travel_type AS "travelType",
-        u.travel_personality AS "travelPersonality",
-        COALESCE(
-          ARRAY_AGG(
-            DISTINCT ui.interest
-          ) FILTER (
-            WHERE ui.interest IS NOT NULL
-          ),
-          '{}'
-        ) AS interests,
-        ${
-          hasCoordinates
-            ? Prisma.sql`ROUND(
-                (
-                  ST_Distance(
-                    COALESCE(
-                      CASE
-                        WHEN ul.current_lng IS NOT NULL AND ul.current_lat IS NOT NULL
-                        THEN ST_SetSRID(
-                          ST_MakePoint(
-                            ul.current_lng::double precision,
-                            ul.current_lat::double precision
-                          ),
-                          4326
-                        )::geography
-                        ELSE NULL
-                      END,
-                      ul.coordinates
-                    ),
-                    ST_SetSRID(
-                      ST_MakePoint(
-                        ${longitude}::double precision,
-                        ${latitude}::double precision
-                      ),
-                      4326
-                    )::geography
-                  ) / 1000
-                )::numeric,
-                1
-              )::double precision`
-            : Prisma.sql`NULL`
-        } AS "distanceKm",
-        CASE
-          WHEN ut.trip_id IS NOT NULL THEN
-            json_build_object(
-              'id', ut.trip_id,
-              'name', ut.trip_name,
-              'destination', ut.destination_name,
-              'destinationCity', ut.destination_city,
-              'destinationState', ut.destination_state,
-              'destinationCountry', ut.destination_country,
-              'dateFrom', ut.trip_date_from,
-              'dateTo', ut.trip_date_to,
-              'travelStyle', ut.trip_travel_style,
-              'budgetStyle', ut.trip_budget_style
-            )
-          ELSE NULL
-        END AS "activeTrip"
-      FROM users u
-      LEFT JOIN user_locations ul
-        ON ul.user_id = u.id
-      INNER JOIN user_onboarding uo
-        ON uo.user_id = u.id
-      LEFT JOIN countries c
-        ON c.code = u.country_code
-      LEFT JOIN user_interests ui
-        ON ui.user_id = u.id
-      LEFT JOIN LATERAL (
-        SELECT 
-          t.id AS trip_id,
-          t.name AS trip_name,
-          t.date_from AS trip_date_from,
-          t.date_to AS trip_date_to,
-          t.budget_style::text AS trip_budget_style,
-          t.travel_style::text AS trip_travel_style,
-          d.name AS destination_name,
-          d.city AS destination_city,
-          d.state AS destination_state,
-          COALESCE(c_dest.name, d.country_code) AS destination_country
-        FROM trips t
-        LEFT JOIN destinations d ON d.id = t.destination_id
-        LEFT JOIN countries c_dest ON c_dest.code = d.country_code
-        WHERE t.created_by = u.id
-          AND t.status = 'UPCOMING'
-          AND t.deleted_at IS NULL
-        ORDER BY t.date_from ASC
-        LIMIT 1
-      ) ut ON true
-      WHERE
-        u.id <> ${currentUserId}::uuid
-        AND u.deleted_at IS NULL
-        AND u.account_status = 'ACTIVE'
-        AND uo.onboarding_completed = true
-        AND (u.is_traveling = false OR u.is_traveling IS NULL)
-        AND ut.trip_id IS NOT NULL
-        AND NOT EXISTS (
-          SELECT 1 FROM connections conn
-          WHERE (
-            (conn."userAId" = ${currentUserId}::uuid AND conn."userBId" = u.id)
-            OR
-            (conn."userBId" = ${currentUserId}::uuid AND conn."userAId" = u.id)
-          )
-          AND conn."isActive" = true
-        )
-      GROUP BY
-        u.id,
-        u.full_name,
-        u.avatar_url,
-        u.cover_url,
-        u.date_of_birth,
-        u.origin_city,
-        u.origin_region,
-        c.name,
-        u.travel_type,
-        u.travel_personality,
-        u.is_traveling,
-        ul.current_lat,
-        ul.current_lng,
-        ul.coordinates,
-        ul.current_state,
-        ul.current_country_code,
-        ul.last_seen_at,
-        ut.trip_id,
-        ut.trip_name,
-        ut.trip_date_from,
-        ut.trip_date_to,
-        ut.trip_budget_style,
-        ut.trip_travel_style,
-        ut.destination_name,
-        ut.destination_city,
-        ut.destination_state,
-        ut.destination_country
-      ORDER BY
-        ${
-          userState
-            ? Prisma.sql`
-              CASE 
-                WHEN LOWER(COALESCE(ul.current_state, u.origin_region, '')) = LOWER(${userState}) THEN 1
-                WHEN LOWER(COALESCE(ul.current_country_code, u.country_code, '')) = LOWER(${userCountryCode || ''}) THEN 2
-                ELSE 3
-              END ASC,
-            `
-            : userCountryCode
-            ? Prisma.sql`
-              CASE 
-                WHEN LOWER(COALESCE(ul.current_country_code, u.country_code, '')) = LOWER(${userCountryCode}) THEN 1
-                ELSE 2
-              END ASC,
-            `
-            : Prisma.empty
-        }
-        ${hasCoordinates ? Prisma.sql`"distanceKm" ASC NULLS LAST,` : Prisma.empty}
-        ut.trip_date_from ASC NULLS LAST,
-        ul.last_seen_at DESC NULLS LAST,
-        u.created_at DESC
-      LIMIT ${params.limit}
-      OFFSET ${offset}
-    `;
-
-    const countResult = await this.prisma.$queryRaw<{ count: bigint }[]>`
-      SELECT COUNT(DISTINCT u.id)::bigint AS count
-      FROM users u
-      INNER JOIN user_onboarding uo
-        ON uo.user_id = u.id
-      INNER JOIN trips t
-        ON t.created_by = u.id
-        AND t.status = 'UPCOMING'
-        AND t.deleted_at IS NULL
-      WHERE
-        u.id <> ${currentUserId}::uuid
-        AND u.deleted_at IS NULL
-        AND u.account_status = 'ACTIVE'
-        AND uo.onboarding_completed = true
-        AND (u.is_traveling = false OR u.is_traveling IS NULL)
-        AND NOT EXISTS (
-          SELECT 1 FROM connections conn
-          WHERE (
-            (conn."userAId" = ${currentUserId}::uuid AND conn."userBId" = u.id)
-            OR
-            (conn."userBId" = ${currentUserId}::uuid AND conn."userAId" = u.id)
-          )
-          AND conn."isActive" = true
-        )
-    `;
-
-    const total = Number(countResult[0]?.count ?? 0);
-
+    // 5. Map to UserCardDetailsResponseDTO
     return {
-      users: users.map((u) => ({
-        ...u,
-        distanceKm:
-          u.distanceKm !== undefined && u.distanceKm !== null
-            ? Number(u.distanceKm)
-            : undefined,
-      })),
+      users: paginatedTrips.map((trip) => {
+        const u = trip.creator;
+        return {
+          id: u.id,
+          fullName: u.fullName,
+          avatarUrl: u.avatarUrl,
+          coverUrl: u.coverUrl,
+          age: u.dateOfBirth ? calculateAge(u.dateOfBirth) : null,
+          city: u.city,
+          state: u.state,
+          country: u.country?.name ?? null,
+          travelType: u.travelType,
+          travelPersonality: u.travelPersonality,
+          interests: u.interests.map((i) => i.interest),
+          isTraveling: u.isTraveling,
+          activeTrip: {
+            id: trip.id,
+            name: trip.name,
+            destination: trip.destination.name,
+            destinationCity: trip.destination.city,
+            destinationState: trip.destination.state,
+            destinationCountry:
+              trip.destination.country?.name ?? trip.destination.countryCode,
+            dateFrom: trip.dateFrom,
+            dateTo: trip.dateTo,
+            travelStyle: trip.travelStyle,
+            budgetStyle: trip.budgetStyle,
+          },
+        };
+      }),
       total,
-      page: params.page,
-      limit: params.limit,
-      totalPages: Math.ceil(total / params.limit),
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     };
   }
 
@@ -864,151 +744,7 @@ export class UserRepository
       }
     }
 
-    // --- FALLBACK 1: State / Region Level ---
-    if (userState) {
-      const stateUsers = await this.prisma.$queryRaw<UserWithDetails[]>`
-        SELECT
-          u.id,
-          u.full_name AS "fullName",
-          u.avatar_url AS "avatarUrl",
-          u.cover_url AS "coverUrl",
-          u.is_traveling AS "isTraveling",
-          EXTRACT(
-            YEAR FROM AGE(
-              CURRENT_DATE,
-              u.date_of_birth
-            )
-          )::int AS age,
-          u.origin_city AS city,
-          u.origin_region AS state,
-          c.name AS country,
-          u.travel_type AS "travelType",
-          u.travel_personality AS "travelPersonality",
-          COALESCE(
-            ARRAY_AGG(
-              DISTINCT ui.interest
-            ) FILTER (
-              WHERE ui.interest IS NOT NULL
-            ),
-            '{}'
-          ) AS interests,
-          ${
-            hasCoordinates
-              ? Prisma.sql`ROUND(
-                  (
-                    ST_Distance(
-                      COALESCE(
-                        CASE
-                          WHEN ul.current_lng IS NOT NULL AND ul.current_lat IS NOT NULL
-                          THEN ST_SetSRID(
-                            ST_MakePoint(
-                              ul.current_lng::double precision,
-                              ul.current_lat::double precision
-                            ),
-                            4326
-                          )::geography
-                          ELSE NULL
-                        END,
-                        ul.coordinates
-                      ),
-                      ST_SetSRID(
-                        ST_MakePoint(
-                          ${longitude}::double precision,
-                          ${latitude}::double precision
-                        ),
-                        4326
-                      )::geography
-                    ) / 1000
-                  )::numeric,
-                  1
-                )::double precision`
-              : Prisma.sql`NULL`
-          } AS "distanceKm"
-        FROM users u
-        LEFT JOIN user_locations ul
-          ON ul.user_id = u.id
-        LEFT JOIN user_onboarding uo
-          ON uo.user_id = u.id
-        LEFT JOIN countries c
-          ON c.code = u.country_code
-        LEFT JOIN user_interests ui
-          ON ui.user_id = u.id
-        WHERE
-          u.id <> ${currentUserId}::uuid
-          AND u.deleted_at IS NULL
-          AND u.account_status = 'ACTIVE'
-          AND (uo.onboarding_completed = true OR uo.user_id IS NULL)
-          AND u.is_traveling = true
-          AND (
-            (ul.current_state IS NOT NULL AND LOWER(ul.current_state) = LOWER(${userState}))
-            OR (u.origin_region IS NOT NULL AND LOWER(u.origin_region) = LOWER(${userState}))
-          )
-        GROUP BY
-          u.id,
-          u.full_name,
-          u.avatar_url,
-          u.cover_url,
-          u.date_of_birth,
-          u.origin_city,
-          u.origin_region,
-          c.name,
-          u.travel_type,
-          u.travel_personality,
-          u.is_traveling,
-          ul.current_lat,
-          ul.current_lng,
-          ul.coordinates,
-          ul.last_seen_at
-        ORDER BY
-          ${hasCoordinates ? Prisma.sql`"distanceKm" ASC NULLS LAST,` : Prisma.empty}
-          ul.last_seen_at DESC NULLS LAST
-        LIMIT ${limit}
-        OFFSET ${offset}
-      `;
-
-      const stateTotal = await this.prisma.$queryRaw<{ count: bigint }[]>`
-        SELECT COUNT(DISTINCT u.id)::bigint AS count
-        FROM users u
-        LEFT JOIN user_locations ul
-          ON ul.user_id = u.id
-        LEFT JOIN user_onboarding uo
-          ON uo.user_id = u.id
-        WHERE
-          u.id <> ${currentUserId}::uuid
-          AND u.deleted_at IS NULL
-          AND u.account_status = 'ACTIVE'
-          AND (uo.onboarding_completed = true OR uo.user_id IS NULL)
-          AND u.is_traveling = true
-          AND (
-            (ul.current_state IS NOT NULL AND LOWER(ul.current_state) = LOWER(${userState}))
-            OR (u.origin_region IS NOT NULL AND LOWER(u.origin_region) = LOWER(${userState}))
-          )
-      `;
-
-      const total = Number(stateTotal[0]?.count ?? 0);
-
-      if (stateUsers.length > 0) {
-        return {
-          users: stateUsers.map((u) => ({
-            ...u,
-            distanceKm:
-              u.distanceKm !== undefined && u.distanceKm !== null
-                ? Number(u.distanceKm)
-                : undefined,
-          })),
-          total,
-          page,
-          limit,
-          totalPages: Math.ceil(total / limit),
-          isFallback: true,
-          fallbackScope: 'state',
-          fallbackRegion: userState,
-          radiusKm,
-        };
-      }
-    }
-
-    // No travelers found nearby
+    // Strictly return only travelers within radiusKm (no fallback across state/country)
     return {
       users: [],
       total: 0,
@@ -1056,7 +792,7 @@ export class UserRepository
     }
     return {
       id: user.id,
-      status: user.accountStatus,
+      status: formatAccountStatusDisplayName(user.accountStatus),
       fullName: user.fullName,
       phone: user.phone,
       isPhoneVerified: user.isPhoneVerified,
@@ -1077,9 +813,9 @@ export class UserRepository
       createdAt: user.createdAt,
       isTraveling: user.isTraveling,
       dob: user.dateOfBirth!,
-      onboardingCompleted: user.onboarding!.onboardingCompleted,
-      onboardingSource: user.onboarding!.onboardingSource,
-      onboardingStep: user.onboarding!.onboardingStep,
+      onboardingCompleted: user.onboarding?.onboardingCompleted ?? false,
+      onboardingSource: formatEnumToDisplayName(user.onboarding?.onboardingSource),
+      onboardingStep: user.onboarding?.onboardingStep ?? 0,
       matchWith: user.matchPreference!,
       tripCount,
       connectionsCount,

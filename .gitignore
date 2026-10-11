@@ -10,6 +10,8 @@ build/
 out/
 *.tsbuildinfo
 
+restore_seed_data.sql
+
 # Environment variables (CRITICAL: Never track these)
 .env
 .env.local

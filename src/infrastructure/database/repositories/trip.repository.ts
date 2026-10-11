@@ -878,6 +878,9 @@ export class TripRepository
         }),
         this.prisma.trip.findMany({
           where,
+          orderBy: {
+            dateFrom: 'asc',
+          },
           include: {
             destination: {
               include: {
