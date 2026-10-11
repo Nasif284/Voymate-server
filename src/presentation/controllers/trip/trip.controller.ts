@@ -81,7 +81,10 @@ export class TripController {
       .json(ApiResponse.success(TRIP_MESSAGES.TRIP_CREATED));
   };
 
-  searchTripMatches = async (req: Request, res: Response): Promise<Response> => {
+  searchTripMatches = async (
+    req: Request,
+    res: Response,
+  ): Promise<Response> => {
     const userId = req.user?.userId;
     const {
       destinationName,

@@ -497,7 +497,9 @@ export class TripRepository
         totalPoints += 10;
         reasons.push(`Both heading to ${targetTrip.destinationState}`);
       }
-      reasons.push(`Compatible travel style (${targetTrip.travelStyle.toLowerCase()})`);
+      reasons.push(
+        `Compatible travel style (${targetTrip.travelStyle.toLowerCase()})`,
+      );
     } else {
       reasons.push(`Compatible travel companion`);
     }

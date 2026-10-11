@@ -24,7 +24,10 @@ export class MatchingEngine implements IMatchingEngine {
     LUXURY: { BUDGET: 0, MODERATE: 4, PREMIUM: 8, LUXURY: 10 },
   };
 
-  private readonly _personalityMatrixTrip: Record<string, Record<string, number>> = {
+  private readonly _personalityMatrixTrip: Record<
+    string,
+    Record<string, number>
+  > = {
     INTROVERT: { INTROVERT: 15, AMBIVERT: 12, EXTROVERT: 7 },
     AMBIVERT: { INTROVERT: 12, AMBIVERT: 15, EXTROVERT: 12 },
     EXTROVERT: { INTROVERT: 7, AMBIVERT: 12, EXTROVERT: 15 },
@@ -39,23 +42,31 @@ export class MatchingEngine implements IMatchingEngine {
 
     // ── Logistics: Destination (Max 30)
     let destinationScore = 0;
-    if (sourceTrip.destinationId && targetTrip.destinationId && sourceTrip.destinationId === targetTrip.destinationId) {
+    if (
+      sourceTrip.destinationId &&
+      targetTrip.destinationId &&
+      sourceTrip.destinationId === targetTrip.destinationId
+    ) {
       destinationScore = 30;
       reasons.push(`Both traveling to ${sourceTrip.destinationName}`);
     } else if (
       sourceTrip.destinationState &&
       targetTrip.destinationState &&
-      sourceTrip.destinationState.toLowerCase() === targetTrip.destinationState.toLowerCase()
+      sourceTrip.destinationState.toLowerCase() ===
+        targetTrip.destinationState.toLowerCase()
     ) {
       destinationScore = 20;
       reasons.push(`Both heading to ${sourceTrip.destinationState}`);
     } else if (
       sourceTrip.destinationCountryCode &&
       targetTrip.destinationCountryCode &&
-      sourceTrip.destinationCountryCode.toLowerCase() === targetTrip.destinationCountryCode.toLowerCase()
+      sourceTrip.destinationCountryCode.toLowerCase() ===
+        targetTrip.destinationCountryCode.toLowerCase()
     ) {
       destinationScore = 10;
-      reasons.push(`Both traveling in ${sourceTrip.destinationCountryName || sourceTrip.destinationCountryCode}`);
+      reasons.push(
+        `Both traveling in ${sourceTrip.destinationCountryName || sourceTrip.destinationCountryCode}`,
+      );
     }
 
     // ── Logistics: Dates Overlap (Max 20)
@@ -70,16 +81,21 @@ export class MatchingEngine implements IMatchingEngine {
     );
 
     if (overlapEnd > overlapStart) {
-      const overlapDays = Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24));
+      const overlapDays = Math.ceil(
+        (overlapEnd - overlapStart) / (1000 * 60 * 60 * 24),
+      );
       const sourceDays = Math.max(
         1,
         Math.ceil(
-          (new Date(sourceTrip.dateTo).getTime() - new Date(sourceTrip.dateFrom).getTime()) /
+          (new Date(sourceTrip.dateTo).getTime() -
+            new Date(sourceTrip.dateFrom).getTime()) /
             (1000 * 60 * 60 * 24),
         ),
       );
       dateScore = Math.min(20, Math.round((overlapDays / sourceDays) * 20));
-      reasons.push(`Dates overlap for ${overlapDays} day${overlapDays > 1 ? 's' : ''}`);
+      reasons.push(
+        `Dates overlap for ${overlapDays} day${overlapDays > 1 ? 's' : ''}`,
+      );
     }
 
     const logisticsScore = destinationScore + dateScore;
@@ -89,7 +105,9 @@ export class MatchingEngine implements IMatchingEngine {
     const tStyle = (targetTrip.travelStyle || '').toUpperCase();
     const travelStyleScore = this._styleMatrix[sStyle]?.[tStyle] ?? 5;
     if (travelStyleScore >= 8) {
-      reasons.push(`Both prefer ${sourceTrip.travelStyle.toLowerCase()} travel`);
+      reasons.push(
+        `Both prefer ${sourceTrip.travelStyle.toLowerCase()} travel`,
+      );
     }
 
     // ── Vibe: Budget Style (Max 10)
@@ -97,7 +115,9 @@ export class MatchingEngine implements IMatchingEngine {
     const tBudget = (targetTrip.budgetStyle || '').toUpperCase();
     const budgetScore = this._budgetMatrix[sBudget]?.[tBudget] ?? 5;
     if (budgetScore >= 8) {
-      reasons.push(`Similar ${sourceTrip.budgetStyle.toLowerCase()} budget preference`);
+      reasons.push(
+        `Similar ${sourceTrip.budgetStyle.toLowerCase()} budget preference`,
+      );
     }
 
     // ── Vibe: Personality (Max 15)
@@ -105,17 +125,22 @@ export class MatchingEngine implements IMatchingEngine {
     const tPers = (targetTrip.creator.travelPersonality || '').toUpperCase();
     const personalityScore = this._personalityMatrixTrip[sPers]?.[tPers] ?? 10;
     if (personalityScore >= 12 && sPers && tPers) {
-      reasons.push(`Compatible travel personalities (${sourceTrip.creator.travelPersonality?.toLowerCase()})`);
+      reasons.push(
+        `Compatible travel personalities (${sourceTrip.creator.travelPersonality?.toLowerCase()})`,
+      );
     }
 
     // ── Vibe: Shared Interests (Max 10)
-    const { similarity: interestSim, shared: sharedInterests } = this._calculateSimilarity(
-      sourceTrip.creator.interests,
-      targetTrip.creator.interests,
-    );
+    const { similarity: interestSim, shared: sharedInterests } =
+      this._calculateSimilarity(
+        sourceTrip.creator.interests,
+        targetTrip.creator.interests,
+      );
     const interestScore = Math.round(interestSim * 10);
     if (sharedInterests.length > 0) {
-      reasons.push(`Shared interests: ${sharedInterests.slice(0, 3).join(', ')}`);
+      reasons.push(
+        `Shared interests: ${sharedInterests.slice(0, 3).join(', ')}`,
+      );
     }
 
     // ── Vibe: Common Languages (Max 5)
@@ -129,7 +154,11 @@ export class MatchingEngine implements IMatchingEngine {
     }
 
     const vibeScore =
-      travelStyleScore + budgetScore + personalityScore + interestScore + languageScore;
+      travelStyleScore +
+      budgetScore +
+      personalityScore +
+      interestScore +
+      languageScore;
     const totalScore = Math.min(100, Math.max(0, logisticsScore + vibeScore));
 
     return {
@@ -167,16 +196,27 @@ export class MatchingEngine implements IMatchingEngine {
     }
 
     if (destinationScore === 0 && query.state && targetTrip.destinationState) {
-      if (query.state.toLowerCase() === targetTrip.destinationState.toLowerCase()) {
+      if (
+        query.state.toLowerCase() === targetTrip.destinationState.toLowerCase()
+      ) {
         destinationScore = 20;
         reasons.push(`Traveling to ${targetTrip.destinationState}`);
       }
     }
 
-    if (destinationScore === 0 && query.countryCode && targetTrip.destinationCountryCode) {
-      if (query.countryCode.toLowerCase() === targetTrip.destinationCountryCode.toLowerCase()) {
+    if (
+      destinationScore === 0 &&
+      query.countryCode &&
+      targetTrip.destinationCountryCode
+    ) {
+      if (
+        query.countryCode.toLowerCase() ===
+        targetTrip.destinationCountryCode.toLowerCase()
+      ) {
         destinationScore = 10;
-        reasons.push(`Traveling in ${targetTrip.destinationCountryName || targetTrip.destinationCountryCode}`);
+        reasons.push(
+          `Traveling in ${targetTrip.destinationCountryName || targetTrip.destinationCountryCode}`,
+        );
       }
     }
 
@@ -193,37 +233,52 @@ export class MatchingEngine implements IMatchingEngine {
       );
 
       if (overlapEnd > overlapStart) {
-        const overlapDays = Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24));
+        const overlapDays = Math.ceil(
+          (overlapEnd - overlapStart) / (1000 * 60 * 60 * 24),
+        );
         const queryDays = Math.max(
           1,
           Math.ceil(
-            (new Date(query.dateTo).getTime() - new Date(query.dateFrom).getTime()) /
+            (new Date(query.dateTo).getTime() -
+              new Date(query.dateFrom).getTime()) /
               (1000 * 60 * 60 * 24),
           ),
         );
         dateScore = Math.min(20, Math.round((overlapDays / queryDays) * 20));
-        reasons.push(`Dates align for ${overlapDays} day${overlapDays > 1 ? 's' : ''}`);
+        reasons.push(
+          `Dates align for ${overlapDays} day${overlapDays > 1 ? 's' : ''}`,
+        );
       }
     } else {
       // Flexible dates searched: award partial baseline
       dateScore = 15;
-      reasons.push(`Upcoming trip on ${new Date(targetTrip.dateFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`);
+      reasons.push(
+        `Upcoming trip on ${new Date(targetTrip.dateFrom).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+      );
     }
 
     const logisticsScore = destinationScore + dateScore;
 
     // ── Vibe: Travel Style (Max 10)
-    const desiredStyle = (query.travelStyle || query.currentUser.travelType || '').toUpperCase();
+    const desiredStyle = (
+      query.travelStyle ||
+      query.currentUser.travelType ||
+      ''
+    ).toUpperCase();
     const tStyle = (targetTrip.travelStyle || '').toUpperCase();
     const travelStyleScore = this._styleMatrix[desiredStyle]?.[tStyle] ?? 5;
     if (travelStyleScore >= 8 && desiredStyle) {
-      reasons.push(`Matches desired ${desiredStyle.toLowerCase()} travel style`);
+      reasons.push(
+        `Matches desired ${desiredStyle.toLowerCase()} travel style`,
+      );
     }
 
     // ── Vibe: Budget Style (Max 10)
     const desiredBudget = (query.budgetStyle || '').toUpperCase();
     const tBudget = (targetTrip.budgetStyle || '').toUpperCase();
-    const budgetScore = desiredBudget ? (this._budgetMatrix[desiredBudget]?.[tBudget] ?? 5) : 8;
+    const budgetScore = desiredBudget
+      ? (this._budgetMatrix[desiredBudget]?.[tBudget] ?? 5)
+      : 8;
     if (budgetScore >= 8 && desiredBudget) {
       reasons.push(`Compatible ${tBudget.toLowerCase()} budget`);
     }
@@ -234,13 +289,16 @@ export class MatchingEngine implements IMatchingEngine {
     const personalityScore = this._personalityMatrixTrip[sPers]?.[tPers] ?? 10;
 
     // ── Vibe: Shared Interests (Max 10)
-    const { similarity: interestSim, shared: sharedInterests } = this._calculateSimilarity(
-      query.currentUser.interests,
-      targetTrip.creator.interests,
-    );
+    const { similarity: interestSim, shared: sharedInterests } =
+      this._calculateSimilarity(
+        query.currentUser.interests,
+        targetTrip.creator.interests,
+      );
     const interestScore = Math.round(interestSim * 10);
     if (sharedInterests.length > 0) {
-      reasons.push(`Shared interests: ${sharedInterests.slice(0, 3).join(', ')}`);
+      reasons.push(
+        `Shared interests: ${sharedInterests.slice(0, 3).join(', ')}`,
+      );
     }
 
     // ── Vibe: Common Languages (Max 5)
@@ -251,7 +309,11 @@ export class MatchingEngine implements IMatchingEngine {
     const languageScore = sharedLanguages.length > 0 ? 5 : 0;
 
     const vibeScore =
-      travelStyleScore + budgetScore + personalityScore + interestScore + languageScore;
+      travelStyleScore +
+      budgetScore +
+      personalityScore +
+      interestScore +
+      languageScore;
     const totalScore = Math.min(100, Math.max(0, logisticsScore + vibeScore));
 
     return {

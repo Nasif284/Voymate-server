@@ -84,4 +84,3 @@ export interface IUserRepository {
   ): Promise<{ id: string; isPhoneVerified: boolean } | null>;
   verifyPhone(userId: string, phone: string): Promise<void>;
 }
-

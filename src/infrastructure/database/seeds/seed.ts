@@ -3,8 +3,7 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '@prisma/client';
 
 const connectionString =
-  process.env.DATABASE_URL ??
-  'postgresql://nasif:1234@localhost:5433/voymate';
+  process.env.DATABASE_URL ?? 'postgresql://nasif:1234@localhost:5433/voymate';
 
 const adapter = new PrismaPg({
   connectionString,
@@ -20,11 +19,13 @@ const ROLES = [
   },
   {
     name: 'MODERATOR',
-    description: 'Moderator handling user moderation, support, and identity verifications',
+    description:
+      'Moderator handling user moderation, support, and identity verifications',
   },
   {
     name: 'ANALYST',
-    description: 'Analyst with read-only access to dashboards, reports, and logs',
+    description:
+      'Analyst with read-only access to dashboards, reports, and logs',
   },
 ];
 
@@ -46,7 +47,12 @@ const COUNTRIES = [
   { code: 'BZ', name: 'Belize', phonePrefix: '+501', flagEmoji: '🇧🇿' },
   { code: 'BT', name: 'Bhutan', phonePrefix: '+975', flagEmoji: '🇧🇹' },
   { code: 'BO', name: 'Bolivia', phonePrefix: '+591', flagEmoji: '🇧🇴' },
-  { code: 'BA', name: 'Bosnia and Herzegovina', phonePrefix: '+387', flagEmoji: '🇧🇦' },
+  {
+    code: 'BA',
+    name: 'Bosnia and Herzegovina',
+    phonePrefix: '+387',
+    flagEmoji: '🇧🇦',
+  },
   { code: 'BW', name: 'Botswana', phonePrefix: '+267', flagEmoji: '🇧🇼' },
   { code: 'BR', name: 'Brazil', phonePrefix: '+55', flagEmoji: '🇧🇷' },
   { code: 'BG', name: 'Bulgaria', phonePrefix: '+359', flagEmoji: '🇧🇬' },
@@ -127,7 +133,12 @@ const COUNTRIES = [
   { code: 'TH', name: 'Thailand', phonePrefix: '+66', flagEmoji: '🇹🇭' },
   { code: 'TR', name: 'Turkey', phonePrefix: '+90', flagEmoji: '🇹🇷' },
   { code: 'UA', name: 'Ukraine', phonePrefix: '+380', flagEmoji: '🇺🇦' },
-  { code: 'AE', name: 'United Arab Emirates', phonePrefix: '+971', flagEmoji: '🇦🇪' },
+  {
+    code: 'AE',
+    name: 'United Arab Emirates',
+    phonePrefix: '+971',
+    flagEmoji: '🇦🇪',
+  },
   { code: 'GB', name: 'United Kingdom', phonePrefix: '+44', flagEmoji: '🇬🇧' },
   { code: 'US', name: 'United States', phonePrefix: '+1', flagEmoji: '🇺🇸' },
   { code: 'VN', name: 'Vietnam', phonePrefix: '+84', flagEmoji: '🇻🇳' },

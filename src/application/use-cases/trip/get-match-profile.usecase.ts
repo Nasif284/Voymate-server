@@ -123,7 +123,10 @@ export class GetMatchProfile implements IGetMatchProfile {
             },
           };
 
-          const tripResult = this._matchingEngine.scoreTripMatch(sourceData, targetData);
+          const tripResult = this._matchingEngine.scoreTripMatch(
+            sourceData,
+            targetData,
+          );
           if (tripResult.totalScore > bestScore) {
             bestScore = tripResult.totalScore;
             bestReasons = tripResult.reasons;
@@ -147,7 +150,7 @@ export class GetMatchProfile implements IGetMatchProfile {
         JSON.stringify({ totalScore, reasons }),
       );
     }
-    console.log(targetTrip)
+    console.log(targetTrip);
     return {
       match: {
         id: targetTrip.id,
@@ -169,7 +172,7 @@ export class GetMatchProfile implements IGetMatchProfile {
           country:
             targetTrip.destinationCountryName ||
             targetTrip.destinationCountryCode,
-          coverUrl: targetTrip.coverUrl
+          coverUrl: targetTrip.coverUrl,
         },
       },
       user: {
@@ -177,7 +180,9 @@ export class GetMatchProfile implements IGetMatchProfile {
         fullName: targetTrip.creator.fullName,
         bio: targetTrip.creator.bio,
         avatarUrl: targetTrip.creator.avatarUrl
-          ? await this._storageService.getSignedUrl(targetTrip.creator.avatarUrl)
+          ? await this._storageService.getSignedUrl(
+              targetTrip.creator.avatarUrl,
+            )
           : null,
         coverUrl: targetTrip.creator.coverUrl
           ? await this._storageService.getSignedUrl(targetTrip.creator.coverUrl)

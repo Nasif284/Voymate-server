@@ -32,4 +32,3 @@ export class GetUserProfile implements IGetUserProfile {
     };
   }
 }
-

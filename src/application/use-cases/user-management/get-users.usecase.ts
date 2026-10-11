@@ -30,7 +30,9 @@ export class GetAllUsers implements IGetUsers {
         return {
           ...u,
           avatarUrl,
-          accountStatusCode: formatAccountStatusDisplayName(u.accountStatusCode),
+          accountStatusCode: formatAccountStatusDisplayName(
+            u.accountStatusCode,
+          ),
         };
       }),
     );

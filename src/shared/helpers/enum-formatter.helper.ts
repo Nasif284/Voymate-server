@@ -20,7 +20,6 @@ export function formatEnumToDisplayName(val?: string | null): string {
     MALE: 'Male',
     FEMALE: 'Female',
     NON_BINARY: 'Non-Binary',
-
   };
 
   const upper = val.toUpperCase();

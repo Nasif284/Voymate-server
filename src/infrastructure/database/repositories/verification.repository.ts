@@ -39,7 +39,8 @@ export class VerificationRepository
   async submitVerification(
     data: SubmitVerificationRepositoryDTO,
   ): Promise<Verification> {
-    const documentType = data.documentTypeCode.toUpperCase() as VerificationDocumentType;
+    const documentType =
+      data.documentTypeCode.toUpperCase() as VerificationDocumentType;
 
     const verification = await this.prisma.$transaction(async (tx) => {
       const existing = await tx.verification.findFirst({

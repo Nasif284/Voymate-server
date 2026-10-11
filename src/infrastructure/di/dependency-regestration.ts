@@ -95,10 +95,7 @@ export function registerDependencies(
     TOKENS.IOtpService,
     RedisOtpService,
   );
-  container.registerSingleton<EmailService>(
-    TOKENS.IEmailService,
-    EmailService,
-  );
+  container.registerSingleton<EmailService>(TOKENS.IEmailService, EmailService);
   container.registerSingleton<StorageService>(
     TOKENS.IStorageService,
     StorageService,
@@ -107,10 +104,7 @@ export function registerDependencies(
     TOKENS.IGeocodeService,
     GoogleGeocodingService,
   );
-  container.registerSingleton<ImageService>(
-    TOKENS.IImageService,
-    ImageService,
-  );
+  container.registerSingleton<ImageService>(TOKENS.IImageService, ImageService);
   container.registerSingleton<TwilioSmsService>(
     TOKENS.ISmsService,
     TwilioSmsService,

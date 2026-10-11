@@ -552,8 +552,9 @@ export class UserRepository
 
     const userState =
       currentUser?.location?.currentState || currentUser?.state || null;
-    const hasCoordinates =
-      !!(currentUser?.location?.currentLat && currentUser?.location?.currentLng);
+    const hasCoordinates = !!(
+      currentUser?.location?.currentLat && currentUser?.location?.currentLng
+    );
     const latitude = hasCoordinates
       ? Number(currentUser!.location!.currentLat)
       : null;
@@ -814,7 +815,9 @@ export class UserRepository
       isTraveling: user.isTraveling,
       dob: user.dateOfBirth!,
       onboardingCompleted: user.onboarding?.onboardingCompleted ?? false,
-      onboardingSource: formatEnumToDisplayName(user.onboarding?.onboardingSource),
+      onboardingSource: formatEnumToDisplayName(
+        user.onboarding?.onboardingSource,
+      ),
       onboardingStep: user.onboarding?.onboardingStep ?? 0,
       matchWith: user.matchPreference!,
       tripCount,
@@ -1200,4 +1203,3 @@ export class UserRepository
     });
   }
 }
-
