@@ -91,8 +91,10 @@ export class CalculateMatch implements ICalculateMatch {
         },
       };
 
-      const sourceStyle = (sourceTrip.travelStyleCode?.toUpperCase() ?? '') as TravelStyleCode;
-      const targetStyle = (targetTrip.travelStyleCode?.toUpperCase() ?? '') as TravelStyleCode;
+      const sourceStyle = (sourceTrip.travelStyleCode?.toUpperCase() ??
+        '') as TravelStyleCode;
+      const targetStyle = (targetTrip.travelStyleCode?.toUpperCase() ??
+        '') as TravelStyleCode;
       const travelStyleScore = styleMatrix[sourceStyle]?.[targetStyle] ?? 0;
 
       if (travelStyleScore >= 8) {
@@ -136,8 +138,10 @@ export class CalculateMatch implements ICalculateMatch {
         },
       };
 
-      const sourceBudget = (sourceTrip.budgetStyleCode?.toUpperCase() ?? '') as BudgetStyleCode;
-      const targetBudget = (targetTrip.budgetStyleCode?.toUpperCase() ?? '') as BudgetStyleCode;
+      const sourceBudget = (sourceTrip.budgetStyleCode?.toUpperCase() ??
+        '') as BudgetStyleCode;
+      const targetBudget = (targetTrip.budgetStyleCode?.toUpperCase() ??
+        '') as BudgetStyleCode;
       const budgetScore = budgetMatrix[sourceBudget]?.[targetBudget] ?? 0;
 
       type PersonalityCode = 'INTROVERT' | 'AMBIVERT' | 'EXTROVERT';
@@ -168,8 +172,12 @@ export class CalculateMatch implements ICalculateMatch {
         },
       };
 
-      const sourcePersonality = (sourceTrip.creator.travelPersonalityCode?.toUpperCase() ?? '') as PersonalityCode;
-      const targetPersonality = (targetTrip.creator.travelPersonalityCode?.toUpperCase() ?? '') as PersonalityCode;
+      const sourcePersonality =
+        (sourceTrip.creator.travelPersonalityCode?.toUpperCase() ??
+          '') as PersonalityCode;
+      const targetPersonality =
+        (targetTrip.creator.travelPersonalityCode?.toUpperCase() ??
+          '') as PersonalityCode;
       const personalityScore =
         personalityMatrix[sourcePersonality]?.[targetPersonality] ?? 0;
 

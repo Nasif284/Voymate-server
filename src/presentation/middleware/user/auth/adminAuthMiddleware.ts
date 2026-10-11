@@ -8,7 +8,10 @@ import { UnauthorizedError } from '../../../../domain/errors/auth.error';
 import { ITokenService } from '../../../../application/interfaces/services/token.service.interface';
 import { ISaveAdminActivity } from '../../../../application/interfaces/use-cases/admins/admin-activity.interface';
 
-import { AdminRoleType, normalizeAdminRole } from '../../../../domain/enums/admin-role.enum';
+import {
+  AdminRoleType,
+  normalizeAdminRole,
+} from '../../../../domain/enums/admin-role.enum';
 
 @injectable()
 export class AdminAuthMiddleware {

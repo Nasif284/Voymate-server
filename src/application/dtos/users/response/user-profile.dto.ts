@@ -32,4 +32,3 @@ export interface GetUserProfileResponseDTO {
     reasons: string[];
   } | null;
 }
-

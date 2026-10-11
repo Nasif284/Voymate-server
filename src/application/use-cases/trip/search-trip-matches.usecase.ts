@@ -34,12 +34,16 @@ export class SearchTripMatches implements ISearchTripMatches {
     private readonly _cacheService: ICacheService,
   ) {}
 
-  async execute(dto: SearchTripMatchesRequestDTO): Promise<TripMatchResponseDTO> {
+  async execute(
+    dto: SearchTripMatchesRequestDTO,
+  ): Promise<TripMatchResponseDTO> {
     const page = dto.page && dto.page > 0 ? dto.page : 1;
     const limit = dto.limit && dto.limit > 0 ? dto.limit : 6;
 
     // 1. Fetch current viewing user profile
-    const currentUser = await this._userRepository.getUserWithDetails(dto.userId);
+    const currentUser = await this._userRepository.getUserWithDetails(
+      dto.userId,
+    );
     if (!currentUser) {
       return {
         matches: [],
@@ -95,13 +99,13 @@ export class SearchTripMatches implements ISearchTripMatches {
 
     const hasSearchFilters = Boolean(
       dto.destinationName?.trim() ||
-        dto.city?.trim() ||
-        dto.state?.trim() ||
-        dto.countryCode?.trim() ||
-        dto.dateFrom ||
-        dto.dateTo ||
-        dto.travelStyle ||
-        dto.budgetStyle,
+      dto.city?.trim() ||
+      dto.state?.trim() ||
+      dto.countryCode?.trim() ||
+      dto.dateFrom ||
+      dto.dateTo ||
+      dto.travelStyle ||
+      dto.budgetStyle,
     );
 
     // 3. Process candidate trips (score only if search filters were applied)
@@ -237,10 +241,7 @@ export class SearchTripMatches implements ISearchTripMatches {
     const total = processedTrips.length;
     const totalPages = Math.ceil(total / limit) || 1;
     const startIndex = (page - 1) * limit;
-    const paginatedItems = processedTrips.slice(
-      startIndex,
-      startIndex + limit,
-    );
+    const paginatedItems = processedTrips.slice(startIndex, startIndex + limit);
 
     // 6. Snapshot cards in Redis & sign assets (only snapshot if search filters are active)
     const matches: TripMatch[] = await Promise.all(

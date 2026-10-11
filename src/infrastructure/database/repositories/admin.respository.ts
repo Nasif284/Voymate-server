@@ -1,4 +1,9 @@
-import { Prisma, PrismaClient, Admin as PrismaAdmin, AccountStatus } from '@prisma/client';
+import {
+  Prisma,
+  PrismaClient,
+  Admin as PrismaAdmin,
+  AccountStatus,
+} from '@prisma/client';
 
 import { BaseRepository } from './base.repository';
 
@@ -16,7 +21,10 @@ import { capitalizeFirstLetter } from '../../../shared/helpers/capitalizseFirstL
 import { UpdateAdminStatusDTO } from '../../../application/dtos/admins/request/update-admin.dto';
 import { AdminNotFoundError } from '../../../domain/errors/admin.error';
 import { AdminMapper } from '../mappers/admin.mapper';
-import { normalizeAdminRole, formatAdminRoleDisplayName } from '../../../domain/enums/admin-role.enum';
+import {
+  normalizeAdminRole,
+  formatAdminRoleDisplayName,
+} from '../../../domain/enums/admin-role.enum';
 
 @injectable()
 export class AdminRepository
@@ -73,7 +81,16 @@ export class AdminRepository
       where: {
         OR: [
           { name: { equals: data.role, mode: Prisma.QueryMode.insensitive } },
-          ...(normalized ? [{ name: { equals: normalized, mode: Prisma.QueryMode.insensitive } }] : []),
+          ...(normalized
+            ? [
+                {
+                  name: {
+                    equals: normalized,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+              ]
+            : []),
         ],
       },
     });
@@ -160,7 +177,16 @@ export class AdminRepository
       where: {
         OR: [
           { name: { equals: roleName, mode: Prisma.QueryMode.insensitive } },
-          ...(normalized ? [{ name: { equals: normalized, mode: Prisma.QueryMode.insensitive } }] : []),
+          ...(normalized
+            ? [
+                {
+                  name: {
+                    equals: normalized,
+                    mode: Prisma.QueryMode.insensitive,
+                  },
+                },
+              ]
+            : []),
         ],
       },
     });

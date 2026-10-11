@@ -13,4 +13,3 @@ export const TRIP_TOKENS = {
   IGetBuddiesUpcomingTrips: 'IGetBuddiesUpcomingTrips',
   IGetAllTripMatches: 'IGetAllTripMatches',
 };
-

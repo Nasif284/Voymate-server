@@ -126,7 +126,10 @@ export class GetTripMatches implements IGetTripMatches {
         },
       };
 
-      const result = this._matchingEngine.scoreTripMatch(sourceData, candidateData);
+      const result = this._matchingEngine.scoreTripMatch(
+        sourceData,
+        candidateData,
+      );
       return {
         candidate,
         result,
@@ -184,9 +187,7 @@ export class GetTripMatches implements IGetTripMatches {
     );
 
     // Soft threshold: keep matches with score >= 25 (or all candidates if pool is small)
-    const validMatches = scoredMatches.filter(
-      (m) => m.result.totalScore >= 25,
-    );
+    const validMatches = scoredMatches.filter((m) => m.result.totalScore >= 25);
 
     // Rank candidates descending by totalScore
     validMatches.sort((a, b) => b.result.totalScore - a.result.totalScore);

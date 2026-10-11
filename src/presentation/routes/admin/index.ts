@@ -12,7 +12,10 @@ export function buildAdminRoutes(
   adminAuth: AdminAuthMiddleware,
 ): Router {
   const router = Router();
-  router.use('/auth', buildAdminAuthRoutes(container.adminAuthController, adminAuth));
+  router.use(
+    '/auth',
+    buildAdminAuthRoutes(container.adminAuthController, adminAuth),
+  );
   router.use(
     '/users',
     buildUserManagementRoutes(container.userManagementController, adminAuth),

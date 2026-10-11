@@ -5,7 +5,8 @@ export const UpdateAdminSchema = z.object({
   role: z
     .string()
     .refine((val) => !val || normalizeAdminRole(val) !== null, {
-      message: 'Invalid admin role. Allowed roles: Super Admin, Moderator, Analyst.',
+      message:
+        'Invalid admin role. Allowed roles: Super Admin, Moderator, Analyst.',
     })
     .optional(),
   status: z

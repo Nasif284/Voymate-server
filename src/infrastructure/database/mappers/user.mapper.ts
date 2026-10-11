@@ -59,8 +59,7 @@ export class UserMapper {
       privacy: row.privacySettings
         ? {
             profileVisibilityCode:
-              (row.privacySettings
-                .profileVisibility as ProfileVisibility) ??
+              (row.privacySettings.profileVisibility as ProfileVisibility) ??
               ProfileVisibility.EVERYONE,
             requestsFromCode:
               (row.privacySettings.requestsFrom as RequestFromOption) ??

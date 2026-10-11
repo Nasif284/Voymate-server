@@ -41,4 +41,3 @@ export const USER_TOKENS = {
   ISubmitVerificationUseCase: 'ISubmitVerificationUseCase',
   IGetDocVerification: 'IGetDocVerification',
 } as const;
-

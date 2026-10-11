@@ -4,9 +4,9 @@ export interface UserMatchingProfile {
   avatarUrl?: string | null;
   coverUrl?: string | null;
   travelPersonality?: string | null; // INTROVERT | AMBIVERT | EXTROVERT
-  travelType?: string | null;        // ADVENTURE | CULTURAL | LEISURE | SOLO | LUXURY | BUDGET etc.
-  interests: string[];               // e.g. ["hiking", "photography", "food"]
-  languages: string[];               // e.g. ["English", "Malayalam", "Hindi"]
+  travelType?: string | null; // ADVENTURE | CULTURAL | LEISURE | SOLO | LUXURY | BUDGET etc.
+  interests: string[]; // e.g. ["hiking", "photography", "food"]
+  languages: string[]; // e.g. ["English", "Malayalam", "Hindi"]
   city?: string | null;
   state?: string | null;
   countryCode?: string | null;
@@ -80,6 +80,12 @@ export interface SearchTripMatchResult {
 }
 
 export interface IMatchingEngine {
-  scoreTripMatch(sourceTrip: TripMatchingData, targetTrip: TripMatchingData): TripMatchResult;
-  scoreSearchMatch(query: SearchTripMatchQuery, targetTrip: TripMatchingData): SearchTripMatchResult;
+  scoreTripMatch(
+    sourceTrip: TripMatchingData,
+    targetTrip: TripMatchingData,
+  ): TripMatchResult;
+  scoreSearchMatch(
+    query: SearchTripMatchQuery,
+    targetTrip: TripMatchingData,
+  ): SearchTripMatchResult;
 }

@@ -20,4 +20,3 @@ export function registerUserDependency() {
   );
   container.registerSingleton<GetMe>(TOKENS.IGetMe, GetMe);
 }
-

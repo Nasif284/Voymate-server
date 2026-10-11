@@ -14,4 +14,3 @@ export const USER_MESSAGES = {
   FETCHED_USER_PROFILE: 'Fetched user profile',
   USER_AUTHENTICATED: 'User authenticated',
 } as const;
-

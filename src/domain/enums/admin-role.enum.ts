@@ -6,10 +6,17 @@ export enum AdminRoleType {
 
 export function normalizeAdminRole(role?: string | null): AdminRoleType | null {
   if (!role) return null;
-  console.log("before:",role)
-  const cleaned = role.trim().toUpperCase().replace(/[\s-]+/g, '_');
+  console.log('before:', role);
+  const cleaned = role
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, '_');
   console.log('after:', cleaned);
-  if (cleaned === 'SUPER_ADMIN' || cleaned === 'SUPER ADMIN' || cleaned === 'ADMIN') {
+  if (
+    cleaned === 'SUPER_ADMIN' ||
+    cleaned === 'SUPER ADMIN' ||
+    cleaned === 'ADMIN'
+  ) {
     return AdminRoleType.SUPER_ADMIN;
   }
   if (cleaned === 'MODERATOR') {

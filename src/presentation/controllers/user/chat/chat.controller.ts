@@ -79,9 +79,7 @@ export class ChatController {
     if (!conversationId) {
       return res
         .status(HttpStatus.BAD_REQUEST)
-        .json(
-          ApiResponse.error('BAD_REQUEST', 'Conversation ID is required.'),
-        );
+        .json(ApiResponse.error('BAD_REQUEST', 'Conversation ID is required.'));
     }
 
     const result = await this._uploadChatImageUseCase.execute(

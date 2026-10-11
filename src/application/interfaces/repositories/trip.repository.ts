@@ -91,11 +91,7 @@ export interface CandidateTripDetail {
   dateTo: Date;
   budgetStyle: string;
   travelStyle: string;
-  connectionStatus:
-    | 'CONNECTED'
-    | 'REQUEST_SENT'
-    | 'REQUEST_RECEIVED'
-    | 'NONE';
+  connectionStatus: 'CONNECTED' | 'REQUEST_SENT' | 'REQUEST_RECEIVED' | 'NONE';
   requestId?: string;
   creator: {
     id: string;

@@ -79,4 +79,3 @@ export class UsersController {
       .json(ApiResponse.success(USER_MESSAGES.FETCHED_USER_PROFILE, data));
   };
 }
-

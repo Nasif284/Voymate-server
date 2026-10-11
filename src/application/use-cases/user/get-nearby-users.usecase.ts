@@ -45,4 +45,3 @@ export class GetNearbyUsers implements IGetNearbyUsers {
     };
   }
 }
-
