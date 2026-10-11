@@ -8,7 +8,6 @@ export enum AnalyticsPeriod {
 }
 export interface AdminAnalyticsDTO {
   period: AnalyticsPeriod;
-
   users: {
     total: number;
     newUsers: number;
