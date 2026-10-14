@@ -64,39 +64,39 @@ The codebase enforces strict unidirectional dependency flow from presentation to
 ```mermaid
 graph TD
     subgraph Presentation_Layer ["Presentation Layer (Ports & Transport)"]
-        HTTP[Express 5 REST API]
-        SOCK[Socket.io Signaling & Chat]
-        VAL[Zod Request Validation]
-        ERR[Centralized Global Error Mapper]
-        METRIC[Prometheus Metrics Middleware]
+        HTTP["Express 5 REST API"]
+        SOCK["Socket.io Signaling & Chat"]
+        VAL["Zod Request Validation"]
+        ERR["Centralized Global Error Mapper"]
+        METRIC["Prometheus Metrics Middleware"]
     end
 
     subgraph Application_Layer ["Application Layer (Use Cases & Orchestration)"]
-        UC_AUTH[Auth & Session Use Cases]
-        UC_GEO[Geospatial Matchmaking Use Cases]
-        UC_AI[LangGraph Travel Agent Use Cases]
-        UC_VERIF[Async Verification Use Cases]
-        UC_COMM[Community Trip Booking Use Cases]
-        PORTS[Service & Repository Interface Contracts]
+        UC_AUTH["Auth & Session Use Cases"]
+        UC_GEO["Geospatial Matchmaking Use Cases"]
+        UC_AI["LangGraph Travel Agent Use Cases"]
+        UC_VERIF["Async Verification Use Cases"]
+        UC_COMM["Community Trip Booking Use Cases"]
+        PORTS["Service & Repository Interface Contracts"]
     end
 
     subgraph Domain_Layer ["Domain Layer (Core Business Rules)"]
-        ENT_USER[User & Profile Aggregates]
-        ENT_TRIP[Trip & Community Aggregates]
-        VAL_OBJ[Domain Enums & Value Objects]
-        DOM_ERR[Domain Business Errors]
+        ENT_USER["User & Profile Aggregates"]
+        ENT_TRIP["Trip & Community Aggregates"]
+        VAL_OBJ["Domain Enums & Value Objects"]
+        DOM_ERR["Domain Business Errors"]
     end
 
     subgraph Infrastructure_Layer ["Infrastructure Layer (Adapters & External Systems)"]
-        REPO_PG[Prisma / PostgreSQL Adapter]
-        VEC_PG[pgvector Cosine Search]
-        GEO_PG[PostGIS Spatial Engine]
-        CACHE_REDIS[Redis Caching & Presence Engine]
-        QUEUE_BULL[BullMQ Asynchronous Job Queues]
-        AI_HF[HuggingFace Local Embeddings]
-        AI_DOC[Google Cloud Document AI]
-        S3_STORAGE[AWS S3 Presigned Storage Adapter]
-        PAY_GATEWAY[Razorpay Cryptographic Verification]
+        REPO_PG["Prisma / PostgreSQL Adapter"]
+        VEC_PG["pgvector Cosine Search"]
+        GEO_PG["PostGIS Spatial Engine"]
+        CACHE_REDIS["Redis Caching & Presence Engine"]
+        QUEUE_BULL["BullMQ Asynchronous Job Queues"]
+        AI_HF["HuggingFace Local Embeddings"]
+        AI_DOC["Google Cloud Document AI"]
+        S3_STORAGE["AWS S3 Presigned Storage Adapter"]
+        PAY_GATEWAY["Razorpay Cryptographic Verification"]
     end
 
     HTTP --> VAL
@@ -206,22 +206,22 @@ Government-issued ID verification (passports, Aadhaar, driving licenses) is CPU-
 
 ```mermaid
 flowchart TD
-    A[Traveler Submits ID Documents] -->|POST multipart| B[Verification Controller]
-    B -->|Upload to S3| C[Private AWS S3 Bucket]
-    B -->|Record Pending Status| D[(PostgreSQL)]
-    B -->|Enqueue Job| E[BullMQ 'verification' Queue]
+    A["Traveler Submits ID Documents"] -->|POST multipart| B["Verification Controller"]
+    B -->|Upload to S3| C["Private AWS S3 Bucket"]
+    B -->|Record Pending Status| D[("PostgreSQL")]
+    B -->|Enqueue Job| E["BullMQ Verification Queue"]
     B -- Immediate 202 Accepted --> A
 
     subgraph Asynchronous_Worker ["Background Worker (Isolated Process)"]
-        E -->|Consume Job| F[Verification Worker]
+        E -->|Consume Job| F["Verification Worker"]
         F -->|Fetch Document Buffers| C
-        F -->|Send to OCR| G[Google Cloud Document AI]
-        G -->|Structured Entities| H[Document Extraction Service]
-        H -->|Extracted Fields| I[Rule-Based Fraud Risk Engine]
-        I -->|Calculate Risk Score 0-100| J{Risk Assessment}
-        J -->|Passed Checks| K[Mark Pending Admin Review / Auto-Approve]
-        J -->|Critical Field Missing / Mismatch| L[Flag High Risk Warning]
-        K --> M[(Update PostgreSQL Verification Record)]
+        F -->|Send to OCR| G["Google Cloud Document AI"]
+        G -->|Structured Entities| H["Document Extraction Service"]
+        H -->|Extracted Fields| I["Rule-Based Fraud Risk Engine"]
+        I -->|Calculate Risk Score 0-100| J{"Risk Assessment"}
+        J -->|Passed Checks| K["Mark Pending Admin Review / Auto-Approve"]
+        J -->|Critical Field Missing / Mismatch| L["Flag High Risk Warning"]
+        K --> M[("Update PostgreSQL Verification Record")]
         L --> M
     end
 ```
@@ -296,23 +296,23 @@ A key engineering differentiator of Voymate is its production deployment automat
 ```mermaid
 flowchart LR
     subgraph Development ["Local Workstation"]
-        DEV[Developer Commit] --> GIT_HOOKS[Husky & Lint-Staged]
-        GIT_HOOKS --> GIT_PUSH[git push origin main]
+        DEV["Developer Commit"] --> GIT_HOOKS["Husky & Lint-Staged"]
+        GIT_HOOKS --> GIT_PUSH["git push origin main"]
     end
 
     subgraph GitHub_Actions ["GitHub Actions CI/CD Pipeline"]
-        GIT_PUSH --> CI_VAL[Branch Name & Commit Linter]
-        CI_VAL --> CI_BUILD[Node 22, Prisma Gen, ESLint, tsc --noEmit]
-        CI_BUILD --> OIDC[AWS IAM OIDC Role Assume]
-        OIDC --> ECR_PUSH[Build Dockerfile.prod & Push to Amazon ECR]
-        ECR_PUSH --> SSM_DISPATCH[AWS SSM Send-Command to EC2]
+        GIT_PUSH --> CI_VAL["Branch Name & Commit Linter"]
+        CI_VAL --> CI_BUILD["Node 22, Prisma Gen, ESLint, tsc --noEmit"]
+        CI_BUILD --> OIDC["AWS IAM OIDC Role Assume"]
+        OIDC --> ECR_PUSH["Build Dockerfile.prod & Push to Amazon ECR"]
+        ECR_PUSH --> SSM_DISPATCH["AWS SSM Send-Command to EC2"]
     end
 
     subgraph Production_EC2 ["Amazon EC2 Production Host"]
-        SSM_DISPATCH --> EXEC_DEPLOY[/home/ubuntu/deploy.sh]
-        EXEC_DEPLOY --> ECR_PULL[Pull Latest Docker Image from ECR]
-        EXEC_DEPLOY --> DOCKER_COMPOSE[docker compose -f docker-compose.prod.yml up -d]
-        DOPPLER_VAULT[(Doppler Secret Vault)] -.->|doppler run runtime injection| DOCKER_CONTAINER[Voymate API Container]
+        SSM_DISPATCH --> EXEC_DEPLOY["Execute deploy.sh via SSM"]
+        EXEC_DEPLOY --> ECR_PULL["Pull Latest Docker Image from ECR"]
+        EXEC_DEPLOY --> DOCKER_COMPOSE["docker compose up -d"]
+        DOPPLER_VAULT[("Doppler Secret Vault")] -.->|doppler run runtime injection| DOCKER_CONTAINER["Voymate API Container"]
         DOCKER_COMPOSE --> DOCKER_CONTAINER
     end
 ```
