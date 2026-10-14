@@ -112,3 +112,29 @@ enum VerificationActivityType {
   NOTE_ADDED
   ASSIGNED
 }
+
+enum CommunityTripCategory {
+  CAMP
+  TREK_EXPEDITION
+  ROADTRIP
+  TRIP
+}
+
+enum CommunityTripPricingType {
+  FREE
+  PAID
+}
+
+enum CommunityTripStatus {
+  DRAFT
+  PUBLISHED
+  COMPLETED
+  CANCELLED
+}
+
+enum CommunityVerificationStatus {
+  UNVERIFIED
+  PENDING
+  VERIFIED
+  REJECTED
+}

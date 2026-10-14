@@ -22,6 +22,17 @@ import { CallController } from '../../presentation/controllers/user/call/call.co
 import { Server } from 'socket.io';
 import { AdminAnalyticsController } from '../../presentation/controllers/admin/analytics/admin-analytics.controller';
 
+import { CommunityAuthController } from '../../presentation/controllers/community/community-auth.controller';
+import { CommunityTripController } from '../../presentation/controllers/community/community-trip.controller';
+import { CommunityBookingController } from '../../presentation/controllers/community/community-booking.controller';
+import { CommunityAuthMiddleware } from '../../presentation/middleware/user/auth/communityAuth.middleware';
+
+export interface CommunityControllers {
+  communityAuthController: CommunityAuthController;
+  communityTripController: CommunityTripController;
+  communityBookingController: CommunityBookingController;
+}
+
 export interface AppContainer {
   adminControllers: AdminControllers;
   authController: AuthController;
@@ -36,11 +47,13 @@ export interface AppContainer {
   authMiddlewares: AuthMiddlewares;
   chatController: ChatController;
   callController: CallController;
+  communityControllers: CommunityControllers;
 }
 
 export interface AuthMiddlewares {
   adminAuthMiddleware: AdminAuthMiddleware;
   userAuthMiddleware: UserAuthMiddleware;
+  communityAuthMiddleware: CommunityAuthMiddleware;
 }
 export interface AdminControllers {
   adminAuthController: AdminAuthController;
@@ -75,6 +88,13 @@ export function buildContainer(
 
   const adminAuthMiddleware = container.resolve(AdminAuthMiddleware);
   const userAuthMiddleware = container.resolve(UserAuthMiddleware);
+  const communityAuthMiddleware = container.resolve(CommunityAuthMiddleware);
+
+  const communityAuthController = container.resolve(CommunityAuthController);
+  const communityTripController = container.resolve(CommunityTripController);
+  const communityBookingController = container.resolve(
+    CommunityBookingController,
+  );
 
   return {
     authController,
@@ -84,6 +104,11 @@ export function buildContainer(
       adminsController,
       verificationController,
       adminAnalyticsController,
+    },
+    communityControllers: {
+      communityAuthController,
+      communityTripController,
+      communityBookingController,
     },
     onboardingController,
     lookupController,
@@ -95,6 +120,7 @@ export function buildContainer(
     authMiddlewares: {
       userAuthMiddleware,
       adminAuthMiddleware,
+      communityAuthMiddleware,
     },
     assistantController,
     chatController,

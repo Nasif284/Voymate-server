@@ -29,6 +29,12 @@ import { ImageService } from '../services/image.service';
 import { registerTripDependency } from './client-side/trip/trip.dependency';
 import { registerConnectionDependency } from './client-side/user/connection.dependency';
 import { registerProfileDependency } from './client-side/user/porfile.dependency';
+import { registerCommunityDependencies } from './client-side/community/community.dependency';
+import { CommunityRepository } from '../database/repositories/community.repository';
+import { CommunityTripRepository } from '../database/repositories/community-trip.repository';
+import { CommunityBookingRepository } from '../database/repositories/community-booking.repository';
+import { RazorpayPaymentService } from '../services/razorpay.service';
+import { CommunityAuthMiddleware } from '../../presentation/middleware/user/auth/communityAuth.middleware';
 import { TwilioSmsService } from '../services/sms-service.service';
 import { RedisPhoneOtpService } from '../services/phone-otp.service';
 import { RedisCacheService } from '../services/redis-cache.service';
@@ -155,6 +161,11 @@ export function registerDependencies(
     PresenceService,
   );
 
+  container.registerSingleton<RazorpayPaymentService>(
+    TOKENS.IRazorpayPaymentService,
+    RazorpayPaymentService,
+  );
+
   container.registerSingleton<UserRepository>(
     TOKENS.IUserRepository,
     UserRepository,
@@ -191,6 +202,18 @@ export function registerDependencies(
     TOKENS.IAdminAnalyticsRepository,
     AdminAnalyticsRepository,
   );
+  container.registerSingleton<CommunityRepository>(
+    TOKENS.ICommunityRepository,
+    CommunityRepository,
+  );
+  container.registerSingleton<CommunityTripRepository>(
+    TOKENS.ICommunityTripRepository,
+    CommunityTripRepository,
+  );
+  container.registerSingleton<CommunityBookingRepository>(
+    TOKENS.ICommunityBookingRepository,
+    CommunityBookingRepository,
+  );
 
   container.registerSingleton<AdminAuthMiddleware>(
     TOKENS.AdminAuthenticationMiddleware,
@@ -199,6 +222,10 @@ export function registerDependencies(
   container.registerSingleton<UserAuthMiddleware>(
     TOKENS.UserAuthMiddleware,
     UserAuthMiddleware,
+  );
+  container.registerSingleton<CommunityAuthMiddleware>(
+    TOKENS.CommunityAuthMiddleware,
+    CommunityAuthMiddleware,
   );
 
   // admin use-cases injection
@@ -220,4 +247,5 @@ export function registerDependencies(
   registerAiAssistantDependency();
   registerChatsDependency();
   registerCallDependency();
+  registerCommunityDependencies();
 }

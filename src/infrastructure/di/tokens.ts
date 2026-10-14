@@ -7,6 +7,7 @@ import { AI_ASSISTANT_TOKENS } from './client-side/ai-assistant/tokens';
 import { CHAT_TOKENS } from './client-side/chat/tokens';
 import { CALL_TOKENS } from './client-side/call/tokens';
 import { ADMIN_ANALYTICS_TOKENS } from './admin-side/admin-analytics/tokens';
+import { COMMUNITY_TOKENS } from './client-side/community/community.tokens';
 
 export const TOKENS = {
   IUserRepository: 'IUserRepository',
@@ -17,9 +18,13 @@ export const TOKENS = {
   IChatRepository: 'IChatRepository',
   ICallRepository: 'ICallRepository',
   IAdminAnalyticsRepository: 'IAdminAnalyticsRepository',
+  ICommunityRepository: 'ICommunityRepository',
+  ICommunityTripRepository: 'ICommunityTripRepository',
+  ICommunityBookingRepository: 'ICommunityBookingRepository',
 
   AdminAuthenticationMiddleware: 'AdminAuthenticationMiddleware',
   UserAuthMiddleware: 'UserAuthMiddleware',
+  CommunityAuthMiddleware: 'CommunityAuthMiddleware',
 
   IHashService: 'IHashService',
   ITokenService: 'ITokenService',
@@ -43,6 +48,7 @@ export const TOKENS = {
   IEmbeddingService: 'IEmbeddingService',
   IPresenceService: 'IPresenceService',
   IMatchingEngine: 'IMatchingEngine',
+  IRazorpayPaymentService: 'IRazorpayPaymentService',
 
   PrismaClient: 'PrismaClient',
   RedisClient: 'RedisClient',
@@ -57,4 +63,5 @@ export const TOKENS = {
   ...CHAT_TOKENS,
   ...CALL_TOKENS,
   ...ADMIN_ANALYTICS_TOKENS,
+  ...COMMUNITY_TOKENS,
 } as const;

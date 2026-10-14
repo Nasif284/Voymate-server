@@ -12,12 +12,14 @@ import { buildProfileRoutes } from './user/profile/profile.route';
 import { buildAssistantRoute } from './user/ai-assistant/assistant.route';
 import { buildChatRoutes } from './user/chat/chat.route';
 import { buildCallRoutes } from './user/calls/call.route';
+import { buildCommunityRoutes } from './community';
 
 export function buildRoutes(container: AppContainer): Router {
   const router = Router();
 
   const userAuth = container.authMiddlewares.userAuthMiddleware;
   const adminAuth = container.authMiddlewares.adminAuthMiddleware;
+  const communityAuth = container.authMiddlewares.communityAuthMiddleware;
 
   router.use('/auth', buildAuthRoutes(container.authController, userAuth));
   router.use(
@@ -47,5 +49,15 @@ export function buildRoutes(container: AppContainer): Router {
   );
   router.use('/chat', buildChatRoutes(container.chatController, userAuth));
   router.use('/calls', buildCallRoutes(container.callController, userAuth));
+  router.use(
+    '/community',
+    buildCommunityRoutes(
+      container.communityControllers.communityAuthController,
+      container.communityControllers.communityTripController,
+      container.communityControllers.communityBookingController,
+      communityAuth,
+      userAuth,
+    ),
+  );
   return router;
 }
