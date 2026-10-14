@@ -395,74 +395,7 @@ The server incorporates production-ready metrics and logging infrastructure:
 - **AWS S3 Bucket**: With CORS configured for direct client uploads
 - **Google Cloud Console**: Document AI Processor enabled
 
-### 2. Environment Configuration
-
-Create a `.env` file in `Server/` based on the configuration matrix below:
-
-```env
-# Application & Network
-PORT=3000
-NODE_ENV=development
-FRONTEND_URL=http://localhost:3000
-APP_URL=http://localhost:3000
-APP_NAME=Voymate
-
-# PostgreSQL & Prisma
-DATABASE_URL=postgresql://user:password@localhost:5432/voymate?schema=public
-DB_USER=user
-DB_PASSWORD=password
-DB_NAME=voymate
-
-# Redis Cache & BullMQ
-REDIS_URL=redis://localhost:6379
-
-# JWT Dual-Token Authentication
-JWT_ACCESS_SECRET=your_super_secret_access_key_32_chars_min
-JWT_REFRESH_SECRET=your_super_secret_refresh_key_32_chars_min
-ACCESS_TOKEN_TTL=15m
-REFRESH_TOKEN_TTL=7d
-
-# OTP Verification
-OTP_EXPIRY_MINUTES=5
-OTP_MAX_ATTEMPTS=5
-
-# SMTP Email Dispatch
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=587
-SMTP_USER=your-email@gmail.com
-SMTP_PASS=your-app-password
-SMTP_FROM=Voymate Team <no-reply@voymate.com>
-
-# AWS S3 Storage
-S3_ACCESS_KEY=your_aws_s3_access_key
-S3_SECRET_KEY=your_aws_s3_secret_key
-S3_REGION=ap-south-1
-S3_BUCKET_NAME=voymate-storage-bucket
-
-# Google Geocoding & Places
-GEOCODING_API_KEY=your_google_maps_geocoding_api_key
-
-# Google Cloud Document AI (OCR)
-GOOGLE_CLOUD_PROJECT_ID=your_gcp_project_id
-GOOGLE_DOCUMENT_AI_LOCATION=us
-GOOGLE_DOCUMENT_AI_PROCESSOR_ID=your_processor_id
-GOOGLE_APPLICATION_CREDENTIALS=/path/to/gcp-credentials.json
-
-# OpenRouter / Gemini LLM
-OPENROUTER_API_KEY=your_openrouter_api_key
-OPENROUTER_MODEL=google/gemini-2.0-flash-001
-
-# Twilio SMS Services
-TWILIO_ACCOUNT_SID=your_twilio_sid
-TWILIO_AUTH_TOKEN=your_twilio_token
-TWILIO_PHONE_NUMBER=+1234567890
-
-# Razorpay Payment Gateway
-RAZORPAY_KEY_ID=rzp_test_yourKeyId
-RAZORPAY_KEY_SECRET=yourSecretKey
-```
-
-### 3. Database Migration & Vector Extension Setup
+### 2. Database Migration & Vector Extension Setup
 
 Ensure PostgreSQL has the required extensions before running Prisma migrations:
 
@@ -484,7 +417,7 @@ npm run db:migrate
 npm run db:seed
 ```
 
-### 4. Running the Server
+### 3. Running the Server
 
 ```bash
 # Development mode with hot-reloading (via tsx watch)
@@ -498,7 +431,7 @@ npm run build
 npm run start
 ```
 
-### 5. Telemetry & Code Quality
+### 4. Telemetry & Code Quality
 
 ```bash
 # Verify TypeScript strict typing across the entire codebase
